@@ -204,6 +204,7 @@ int check_laser_puzzle()
     {
       puzzle_state = 4;
       set_door_lights(255);
+      set_exit_door(false);
       delay(500);
     }
   /*else
@@ -302,17 +303,40 @@ void set_codes()
     }
   }
 
-bool get_codes()
+bool compare_codes_r1()
 {
   bool compare = true;
   unsigned char temp[16];
-    for (int i = 0 ; i < 6 ; i++)
+    for (int i = 0 ; i < 3 ; i++)
     {
       if ( rfid[i]->Request(PICC_REQIDL, temp) == '0' )
       {
         if (rfid[i]->Anticoll(temp) == '0')
         {
-         for (int j = 0 ; i < 6 ; i++)
+         for (int j = 0 ; j < 6 ; i++)
+         {
+          
+            if (codes[i][j] == temp[j])
+              compare &= true;
+              else
+              compare &= false;
+          
+         }
+        }
+      }
+    }
+}
+bool compare_codes_r3()
+{
+  bool compare = true;
+  unsigned char temp[16];
+    for (int i = 3 ; i < 6 ; i++)
+    {
+      if ( rfid[i]->Request(PICC_REQIDL, temp) == '0' )
+      {
+        if (rfid[i]->Anticoll(temp) == '0')
+        {
+         for (int j = 0 ; j < 6 ; i++)
          {
           
             if (codes[i][j] == temp[j])
@@ -343,7 +367,7 @@ int status = 0;
  4 = game over
  5 = reset1
  6 = reset2
- 7 = manual test
+ 7 = rfid_set
  */
 
 
@@ -396,18 +420,137 @@ void serial_readin()
 
 
 
-
+Room1 room1;
+Room2 room2;
+Room3 room3;
+RFID_EFFECTS rfid;
 
 void setup() {
   // put your setup code here, to run once:
 Serial.begin(9600);
-Room1 room1;
-Room2 room2;
-Room3 room3;
+
 
 }
 
 void loop() {
-  // put your main code here, to run repeatedly: 
-  ;
+    
+  //standby***********************************************************************************
+  while(status == 0)
+  {
+    serial_readin();
+  }
+  
+  //room1************************************************************************************
+  while(status == 1)
+  {
+    
+    serial_readin();
+    
+    if(room1.check_shield())
+      room1.set_frame(false);
+
+    if(room1.check_bust())
+      room1.set_pedestal(false);
+
+    if(rfid.compare_codes_r1())
+      room1.activate_slider(true); 
+  }
+
+  //room2****************************************************************************************
+  while(status == 2)
+  {
+    serial_readin();
+    
+    room2.set_uv(room2.get_entry_door_status());
+    room2.set_houselights(!room2.get_entry_door_status());
+    room2.check_laser_puzzle();    
+  }
+
+  //room3*****************************************************************************************
+  while(status == 3)
+  {
+    serial_readin();
+    
+    if(room3.check_shield())
+      room3.set_glyph(1,true);
+
+    if(rfid.compare_codes_r3())
+      room3.set_glyph(2,true);
+
+    if(room3.check_pictures())
+      room3.set_glyph(3,true);
+
+    if(room3.check_statue_orientation())
+      room3.set_glyph(4,true);   
+  }
+
+//reset1**********************************************************************************************
+while(status == 4)
+{
+  serial_readin();
+  
+  room1.set_frame(false);
+  room1.set_pedestal(false);
+  room1.activate_slider(true);
+
+  room2.set_uv(true);
+  room2.set_houselights(true);
+  room2.set_exit_door(false);
+  room2.set_door_lights(255);
+
+  room3.set_glyph(1,true);
+  room3.set_glyph(2,true);
+  room3.set_glyph(3,true);
+  room3.set_glyph(4,true);
+  
+}
+
+//reset2**********************************************************************************************
+while(status == 5)
+{
+  serial_readin();
+  
+  room1.set_frame(true);
+  room1.set_pedestal(true);
+  room1.activate_slider(false);
+  room1.calibrate_bust();
+
+  room2.set_uv(false);
+  room2.set_houselights(false);
+  room2.set_exit_door(true);
+  room2.set_door_lights(0);
+  room2.calibrate_laserrx();
+
+  room3.set_glyph(1,false);
+  room3.set_glyph(2,false);
+  room3.set_glyph(3,false);
+  room3.set_glyph(4,false);
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
 }
