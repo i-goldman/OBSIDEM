@@ -38,6 +38,9 @@
 class Room1
 {
 public:
+bool sliding_frame;
+bool pedestal;
+bool large_frame;
 
 int off_state;
 
@@ -95,6 +98,8 @@ void activate_slider(bool direction)
 class Room2
 {
 public:
+bool exit_door;
+
 
 Room2()
 {
@@ -113,6 +118,7 @@ calibrate_laserrx();
 const int code[4] =  {1,2,3,4};
 int puzzle_state = 0;
 int avg_base_value;
+bool r2_door;
 //
 
 //
@@ -205,6 +211,8 @@ int check_laser_puzzle()
       puzzle_state = 4;
       set_door_lights(255);
       set_exit_door(false);
+      r2_door = true;
+      
       delay(500);
     }
   /*else
@@ -225,6 +233,9 @@ int check_laser_puzzle()
 class Room3
 {
 public:
+  bool pictures;
+  bool magnetic_busts;
+  bool shield;
 
 Room3()
 {
@@ -275,6 +286,10 @@ Mfrc522 * rfid [6];
 unsigned char codes [6][5];
 
 public:
+
+bool room1;
+bool room3;
+
 RFID_EFFECTS()
 {
   SPI.begin();
@@ -380,37 +395,43 @@ void serial_readin()
   serial_in = "NULL";
 
     if (serial_in == "status = 0")
-    status = 0;
+    status = 0; //idle
     
     if (serial_in == "status = 1")
-    status = 1;
+    status = 1; //room1
 
     if (serial_in == "status = 2")
-    status = 2;
+    status = 2; //room2
 
     if (serial_in == "status = 3")
-    status = 3;
+    status = 3; //room3
 
     if (serial_in == "status = 4")
-    status = 4;
+    status = 4; //reset1
 
     if (serial_in == "status = 5")
-    status = 5;
+    status = 5; //reset2
 
     if (serial_in == "status = 6")
-    status = 6;
+    status = 6; //set rfid
 
     if (serial_in == "status = 7")
-    status = 7;
+    status = 7; //not used
 
     if (serial_in == "reset_1")
-    status = 5;
+    status = 4;
 
     if (serial_in == "reset_2")
-    status = 6;
+    status = 5;
 
     if (serial_in == "set_rfid")
-    status = 7;
+    status = 6;
+
+    if (serial_in == "get_status")
+    {
+      if(Serial.available())
+        Serial.print(status);
+    }
     
   
 }
@@ -448,13 +469,29 @@ void loop() {
     serial_readin();
     
     if(room1.check_shield())
-      room1.set_frame(false);
+      {
+        room1.set_frame(false);
+        if(!room1.large_frame)
+          room1.large_frame = true;
+      }
+      
 
     if(room1.check_bust())
+    {
       room1.set_pedestal(false);
+      if(!room1.pedestal)
+        room1.pedestal = true;
+    }
 
     if(rfid.compare_codes_r1())
-      room1.activate_slider(true); 
+    {
+      room1.activate_slider(true);
+      if(!room1.sliding_frame)
+        room1.sliding_frame = true;
+    } 
+
+    if(room1.large_frame && room1.pedestal && room1.sliding_frame)
+      status = 2;
   }
 
   //room2****************************************************************************************
@@ -465,6 +502,8 @@ void loop() {
     room2.set_uv(room2.get_entry_door_status());
     room2.set_houselights(!room2.get_entry_door_status());
     room2.check_laser_puzzle();    
+    if(room2.r2_door)
+      status = 3;
   }
 
   //room3*****************************************************************************************
@@ -473,22 +512,58 @@ void loop() {
     serial_readin();
     
     if(room3.check_shield())
+    {
       room3.set_glyph(1,true);
+      if (!room3.shield)
+        room3.shield = true;
+    }
 
     if(rfid.compare_codes_r3())
+    {
       room3.set_glyph(2,true);
+      if(!rfid.room3)
+        rfid.room3 = true;
+    }
 
     if(room3.check_pictures())
+     {
       room3.set_glyph(3,true);
+      if(!room3.pictures)
+        room3.pictures = true;
+     }
 
     if(room3.check_statue_orientation())
-      room3.set_glyph(4,true);   
+      {
+      room3.set_glyph(4,true);
+      if(!room3.magnetic_busts)
+        room3.magnetic_busts = true;
+      }
+    if(room3.magnetic_busts && room3.pictures && room3.shield && rfid.room3)
+      status = 0;   
   }
 
 //reset1**********************************************************************************************
 while(status == 4)
 {
   serial_readin();
+  
+  room1.sliding_frame      =false;
+  room1.pedestal           =false;
+  room1.large_frame        =false;
+  room2.r2_door            =false;
+  room3.magnetic_busts     =false;
+  room3.pictures           =false;
+  room3.shield             =false;
+  rfid.room1               =false;
+  rfid.room3               =false;
+
+  
+
+
+
+
+
+
   
   room1.set_frame(false);
   room1.set_pedestal(false);
