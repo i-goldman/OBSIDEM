@@ -38,6 +38,9 @@
 class Room1
 {
 public:
+bool sliding_frame;
+bool pedestal;
+bool large_frame;
 
 int off_state;
 
@@ -95,6 +98,8 @@ void activate_slider(bool direction)
 class Room2
 {
 public:
+bool exit_door;
+
 
 Room2()
 {
@@ -113,6 +118,7 @@ calibrate_laserrx();
 const int code[4] =  {1,2,3,4};
 int puzzle_state = 0;
 int avg_base_value;
+bool r2_door;
 //
 
 //
@@ -204,6 +210,9 @@ int check_laser_puzzle()
     {
       puzzle_state = 4;
       set_door_lights(255);
+      set_exit_door(false);
+      r2_door = true;
+      
       delay(500);
     }
   /*else
@@ -224,6 +233,9 @@ int check_laser_puzzle()
 class Room3
 {
 public:
+  bool pictures;
+  bool magnetic_busts;
+  bool shield;
 
 Room3()
 {
@@ -274,6 +286,10 @@ Mfrc522 * rfid [6];
 unsigned char codes [6][5];
 
 public:
+
+bool room1;
+bool room3;
+
 RFID_EFFECTS()
 {
   SPI.begin();
@@ -302,17 +318,40 @@ void set_codes()
     }
   }
 
-bool get_codes()
+bool compare_codes_r1()
 {
   bool compare = true;
   unsigned char temp[16];
-    for (int i = 0 ; i < 6 ; i++)
+    for (int i = 0 ; i < 3 ; i++)
     {
       if ( rfid[i]->Request(PICC_REQIDL, temp) == '0' )
       {
         if (rfid[i]->Anticoll(temp) == '0')
         {
-         for (int j = 0 ; i < 6 ; i++)
+         for (int j = 0 ; j < 6 ; i++)
+         {
+          
+            if (codes[i][j] == temp[j])
+              compare &= true;
+              else
+              compare &= false;
+          
+         }
+        }
+      }
+    }
+}
+bool compare_codes_r3()
+{
+  bool compare = true;
+  unsigned char temp[16];
+    for (int i = 3 ; i < 6 ; i++)
+    {
+      if ( rfid[i]->Request(PICC_REQIDL, temp) == '0' )
+      {
+        if (rfid[i]->Anticoll(temp) == '0')
+        {
+         for (int j = 0 ; j < 6 ; i++)
          {
           
             if (codes[i][j] == temp[j])
@@ -334,7 +373,7 @@ bool get_codes()
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 //status registers
-int status = 0;
+int status = 1;
 /*
  0 = standby
  1 = room1
@@ -343,7 +382,7 @@ int status = 0;
  4 = game over
  5 = reset1
  6 = reset2
- 7 = manual test
+ 7 = rfid_set
  */
 
 
@@ -356,37 +395,43 @@ void serial_readin()
   serial_in = "NULL";
 
     if (serial_in == "status = 0")
-    status = 0;
+    status = 0; //idle
     
     if (serial_in == "status = 1")
-    status = 1;
+    status = 1; //room1
 
     if (serial_in == "status = 2")
-    status = 2;
+    status = 2; //room2
 
     if (serial_in == "status = 3")
-    status = 3;
+    status = 3; //room3
 
     if (serial_in == "status = 4")
-    status = 4;
+    status = 4; //reset1
 
     if (serial_in == "status = 5")
-    status = 5;
+    status = 5; //reset2
 
     if (serial_in == "status = 6")
-    status = 6;
+    status = 6; //set rfid
 
     if (serial_in == "status = 7")
-    status = 7;
+    status = 7; //not used
 
     if (serial_in == "reset_1")
-    status = 5;
+    status = 4;
 
     if (serial_in == "reset_2")
-    status = 6;
+    status = 5;
 
     if (serial_in == "set_rfid")
-    status = 7;
+    status = 6;
+
+    if (serial_in == "get_status")
+    {
+      if(Serial.available())
+        Serial.print(status);
+    }
     
   
 }
@@ -396,18 +441,157 @@ void serial_readin()
 
 
 
-
+Room1 room1;
+Room2 room2;
+Room3 room3;
+//RFID_EFFECTS rfid;
 
 void setup() {
   // put your setup code here, to run once:
 Serial.begin(9600);
-Room1 room1;
-Room2 room2;
-Room3 room3;
+  Serial.setTimeout (100);
+
+  setup_rooms();
+
 
 }
 
 void loop() {
-  // put your main code here, to run repeatedly: 
-  ;
+    
+  
+  while(status == 1)
+  {
+    
+    
+    if(room1.check_shield())
+      {
+        room1.set_frame(false);
+        if(!room1.large_frame)
+          room1.large_frame = true;
+      }
+      
+
+    if(room1.check_bust())
+    {
+      room1.set_pedestal(false);
+      if(!room1.pedestal)
+        room1.pedestal = true;
+    }
+
+   
+    if(room1.large_frame && room1.pedestal)
+      status = 2;
+  }
+
+  //room2****************************************************************************************
+  while(status == 2)
+  {
+    
+    
+    room2.set_uv(!room2.get_entry_door_status());
+    room2.set_houselights(room2.get_entry_door_status() || room2.r2_door);
+    room2.check_laser_puzzle();    
+    if(room2.r2_door)
+      status = 3;
+  }
+
+  //room3*****************************************************************************************
+  while(status == 3)
+  {
+
+    
+    if(room3.check_shield())
+    {
+      room3.set_glyph(1,true);
+      if (!room3.shield)
+        room3.shield = true;
+    }
+
+    if(room3.check_pictures())
+     {
+      room3.set_glyph(3,true);
+      if(!room3.pictures)
+        room3.pictures = true;
+     }
+
+    if(room3.check_statue_orientation())
+      {
+      room3.set_glyph(4,true);
+      if(!room3.magnetic_busts)
+        room3.magnetic_busts = true;
+      }
+  }
+
+//reset1**********************************************************************************************
 }
+
+
+
+
+void setup_rooms()
+{
+  
+  room1.sliding_frame      =false;
+  room1.pedestal           =false;
+  room1.large_frame        =false;
+  room2.r2_door            =false;
+  room3.magnetic_busts     =false;
+  room3.pictures           =false;
+  room3.shield             =false;
+ // rfid.room1               =false;
+ // rfid.room3               =false;
+
+  
+
+
+
+
+
+
+  
+
+  
+  room1.set_frame(true);
+  room1.set_pedestal(true);
+//  room1.activate_slider(false);
+//  room1.calibrate_bust();
+
+  room2.set_uv(false);
+  room2.set_houselights(false);
+  room2.set_exit_door(true);
+  room2.set_door_lights(0);
+//  room2.calibrate_laserrx();
+
+  room3.set_glyph(1,false);
+  room3.set_glyph(2,false);
+  room3.set_glyph(3,false);
+  room3.set_glyph(4,false);
+  
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
