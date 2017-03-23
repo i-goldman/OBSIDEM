@@ -79,12 +79,9 @@ void set_frame(bool state)
   digitalWrite(r1_large_frame_pin,state);
 }
 
-void activate_slider(bool direction)
+void activate_slider(bool state)
 {
-  digitalWrite(r1_motor_relay_pin,direction);
-  digitalWrite(r1_motor_mosfet_pin,true);
-  delay (5000);
-  digitalWrite(r1_motor_mosfet_pin,false);
+  digitalWrite(r1_motor_mosfet_pin,state);
 }
 };
 //////////////////////////////////////////////////////////////////////////////
@@ -250,6 +247,7 @@ pinMode(r3_statue_orientation_pin,INPUT_PULLDOWN);
 
 bool check_pictures()
 {
+  pinMode(r3_picture_pin,INPUT);
   return (digitalRead(r3_picture_pin));
 }
 
@@ -261,7 +259,7 @@ void set_glyph(int glyph, bool status)
     digitalWrite(r3_g2_pin,status);
   if(glyph == 3)
     digitalWrite(r3_g3_pin,status);
-  if(glyph == 1)
+  if(glyph == 4)
     digitalWrite(r3_g4_pin,status);
  
 }
@@ -348,7 +346,7 @@ void setup_room()
 
   room1.set_frame(true);
   room1.set_pedestal(true);
-//  room1.activate_slider(false);
+  room1.activate_slider(true);
 //  room1.calibrate_bust();
 
   room2.set_uv(false);
@@ -416,6 +414,9 @@ void loop() {
     room2.set_houselights(room2.get_entry_door_status()||room2.r2_door);
     
     int foo = room2.check_laser_puzzle();    
+
+
+
  
     if(room3.check_shield())
     {
