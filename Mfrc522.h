@@ -122,8 +122,7 @@
 class Mfrc522
 {
 	public:
-		Mfrc522(int chip_idno);
-		void write_ss(bool en);
+		Mfrc522(int chipSelectPin);
 		void WriteReg(unsigned char addr, unsigned char val);
 		unsigned char ReadReg(unsigned char addr);
 		void SetBitMask(unsigned char reg, unsigned char mask);
@@ -142,10 +141,8 @@ class Mfrc522
 		unsigned char WriteBlock(unsigned char blockAddr, unsigned char *writeData);
 		void Halt(void);
 	private:
-		int chip_id;
-		int * outbyte;
-
-
+		int chipSelectPin;
+		
 };
 
 #endif

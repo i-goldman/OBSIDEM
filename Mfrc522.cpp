@@ -10,10 +10,7 @@
 #include <Mfrc522.h>
 #include <SPI.h>
 
-Mfrc522::Mfrc522(int chip_idno)
-{
-	chip_id = chip_idno;
-
+/*
 	switch (chip_id)
 	{
 	 	case (0) : outbyte = new int[3] {1,0,1};
@@ -24,29 +21,17 @@ Mfrc522::Mfrc522(int chip_idno)
 	    case (5) : outbyte = new int[3] {0,0,0};
 	}
 
+*/
 
 
-}
 
-
-void Mfrc522:: write_ss(bool en)
+Mfrc522::Mfrc522(int csp)
 {
-	if (en)
-	{
-		  digitalWrite(12,outbyte[0]);
-		  digitalWrite(5,outbyte[1]);
-		  digitalWrite(35,outbyte[2]);
-	}
-	else
-	{
-		  digitalWrite(12,HIGH);
-		  digitalWrite(5,HIGH);
-		  digitalWrite(35,HIGH);
-	}
-
-
-
-
+	chipSelectPin = csp;
+	
+	pinMode(12,OUTPUT);
+	pinMode(5,OUTPUT);
+	pinMode(35,OUTPUT);
 }
 
 /*
@@ -57,12 +42,57 @@ void Mfrc522:: write_ss(bool en)
  */
 void Mfrc522::WriteReg(unsigned char addr, unsigned char val)
 {
+	bool mux[3] ;
+	//digitalWrite(chipSelectPin, LOW);
+	if (chipSelectPin == 0)
+	{
+		mux[0] = true;
+		mux[1] = false;
+		mux[2] = true;
+	}
+	if (chipSelectPin == 1)
+	{
+		mux[0] = true;
+		mux[1] = false;
+		mux[2] = false;
+	}
+	if (chipSelectPin == 2)
+	{
+		mux[0] = false;
+		mux[1] = true;
+		mux[2] = true;
+	}
+	if (chipSelectPin == 3)
+	{
+		mux[0] = false;
+		mux[1] = true;
+		mux[2] = false;
+	}
+	if (chipSelectPin == 4)
+	{
+		mux[0] = false;
+		mux[1] = false;
+		mux[2] = true;
+	}
+	if (chipSelectPin == 5)
+	{
+		mux[0] = false;
+		mux[1] = false;
+		mux[2] = false;
+	}
+	
+	digitalWrite(12, mux[0]);
+	digitalWrite(5, mux[1]);
+	digitalWrite(35, mux[2]);
+	
+	
 
-	write_ss(true);
 	SPI.transfer((addr<<1)&0x7E);	
 	SPI.transfer(val);
 	
-	write_ss(false);
+	digitalWrite(12, HIGH);
+	digitalWrite(5, HIGH);
+	digitalWrite(35, HIGH);
 }
 
 /*
@@ -74,12 +104,55 @@ void Mfrc522::WriteReg(unsigned char addr, unsigned char val)
 unsigned char Mfrc522::ReadReg(unsigned char addr)
 {
 	unsigned char val;
-	write_ss(true);
+	bool mux[3] ;
+	//digitalWrite(chipSelectPin, LOW);
+	if (chipSelectPin == 0)
+	{
+		mux[0] = true;
+		mux[1] = false;
+		mux[2] = true;
+	}
+	if (chipSelectPin == 1)
+	{
+		mux[0] = true;
+		mux[1] = false;
+		mux[2] = false;
+	}
+	if (chipSelectPin == 2)
+	{
+		mux[0] = false;
+		mux[1] = true;
+		mux[2] = true;
+	}
+	if (chipSelectPin == 3)
+	{
+		mux[0] = false;
+		mux[1] = true;
+		mux[2] = false;
+	}
+	if (chipSelectPin == 4)
+	{
+		mux[0] = false;
+		mux[1] = false;
+		mux[2] = true;
+	}
+	if (chipSelectPin == 5)
+	{
+		mux[0] = false;
+		mux[1] = false;
+		mux[2] = false;
+	}
+	
+	digitalWrite(12, mux[0]);
+	digitalWrite(5, mux[1]);
+	digitalWrite(35, mux[2]);
 
 	SPI.transfer(((addr<<1)&0x7E) | 0x80);	
 	val =SPI.transfer(0x00);
 	
-	write_ss(false);
+	digitalWrite(12, HIGH);
+	digitalWrite(5, HIGH);
+	digitalWrite(35, HIGH);
 	
 	return val;	
 }
