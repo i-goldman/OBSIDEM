@@ -110,6 +110,7 @@ const int code[4] =  {3,4,1,2};
 int puzzle_state = 0;
 int avg_base_value = 200;
 bool r2_door;
+bool r2_uv;
 //
 
 //
@@ -291,6 +292,7 @@ void setup_room()
   room1.pedestal           =false;
   room1.large_frame        =false;
   room2.r2_door            =false;
+  room2.r2_uv                 =false;
   room3.magnetic_busts     =false;
   room3.pictures           =false;
   room3.shield             =false;
@@ -351,10 +353,22 @@ void loop() {
       room1.activate_slider(false);
      
 
+    if (!room2.get_entry_door_status())
+      {
+        room2.set_uv(true);
+        if (!room2.r2_uv)
+        {
+          room2.r2_uv = true;
+          delay(10000);
+        }
+      }
+    else
+    {
+      room2.set_uv(false);
+      room2.r2_uv = false;
+    }
     
-    room2.set_uv(!room2.get_entry_door_status());
-    
-    room2.set_houselights(room2.get_entry_door_status()||room2.r2_door);
+    room2.set_houselights(room2.r2_door);
     
     int foo = room2.check_laser_puzzle();    
 
