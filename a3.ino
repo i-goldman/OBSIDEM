@@ -143,7 +143,7 @@ void set_exit_door(bool status)
 
 bool check_laser_rx (int laser_number)
 {
-  pinMode(r2_laserrx1_pin,INPUT);
+pinMode(r2_laserrx1_pin,INPUT);
 pinMode(r2_laserrx2_pin,INPUT);
 pinMode(r2_laserrx3_pin,INPUT);
 pinMode(r2_laserrx4_pin,INPUT);
@@ -160,17 +160,21 @@ pinMode(r2_laserrx4_pin,INPUT);
   case 4: {rx_value = digitalRead(r2_laserrx4_pin);
   break;}
   }
-  Serial.println(!rx_value);
   return !rx_value;
 }
 
 int check_laser_puzzle()
 {
-  Serial.println(puzzle_state);
+  delay(1000);
+  
   if ((puzzle_state == 0) && (check_laser_rx(code[0])))
     {
-    puzzle_state = 1;
-    set_door_lights(63);
+      delay (2000);
+      if (check_laser_rx(code[0]))
+      {
+        puzzle_state = 1;
+        set_door_lights(63);
+      }
     delay (500);
     }
 
@@ -357,18 +361,16 @@ void loop() {
       {
         room2.set_uv(true);
         if (!room2.r2_uv)
-        {
-          room2.r2_uv = true;
-          delay(10000);
-        }
-      }
+            room2.r2_uv = true;
+       }
+       
     else
     {
       room2.set_uv(false);
       room2.r2_uv = false;
     }
     
-    room2.set_houselights(room2.r2_door);
+    room2.set_houselights(!room1.large_frame);
     
     int foo = room2.check_laser_puzzle();    
 
@@ -390,14 +392,15 @@ void loop() {
         room3.pictures = true;
      }
 
-    if(room3.check_statue_orientation())
+    if(room3.check_statue_orientation() && room3.check_center_pedestals())
       {
+      room3.set_glyph(4,true);
       room3.set_glyph(2,true);
       if(!room3.magnetic_busts)
         room3.magnetic_busts = true;
       }
 
-    if(room3.check_center_pedestals())
-      room3.set_glyph(4,true);
+/*    if(room3.check_center_pedestals())
+      room3.set_glyph(4,true);*/
  
 }
