@@ -165,58 +165,69 @@ pinMode(r2_laserrx4_pin,INPUT);
 
 int check_laser_puzzle()
 {
-  delay(1000);
+  //delay(1000);
   
   if ((puzzle_state == 0) && (check_laser_rx(code[0])))
     {
-      delay (2000);
+      delay (50);
       if (check_laser_rx(code[0]))
       {
         puzzle_state = 1;
         set_door_lights(63);
+        delay (5000);
       }
-    delay (500);
+    
     }
 
-  if ((puzzle_state == 1) && (check_laser_rx(code[1])))
+  if (puzzle_state == 1)
     {
-    puzzle_state = 2;
-    set_door_lights(126);
-    delay(500);
+      if (check_laser_rx(code[1]))
+      {
+        puzzle_state = 2;
+        set_door_lights(126);
+        delay(5000);
+      }
+     if (check_laser_rx(code[0]) || check_laser_rx(code[2]) || check_laser_rx(code[3]))
+     {
+          puzzle_state = 0;
+          set_door_lights(0);
+     }
     }
- /* else
-  {
-    puzzle_state = 0;
-    set_door_lights(0);
-  }*/
-
-  if ((puzzle_state == 2) && (check_laser_rx(code[2])))
-    {
-      puzzle_state = 3;
-      set_door_lights(189);
-      delay(500);
-    }
-  /*else
-  {
-    puzzle_state = 0;
-    set_door_lights(0);
-  }*/
   
-  if ((puzzle_state == 3) && (check_laser_rx(code[3])))
+  if (puzzle_state == 2)
     {
+      if (check_laser_rx(code[2]))
+      {
+        puzzle_state = 3;
+        set_door_lights(189);
+        delay(5000);
+      }
+     if (check_laser_rx(code[0]) || check_laser_rx(code[1]) || check_laser_rx(code[3]))
+     {
+          puzzle_state = 0;
+          set_door_lights(0);
+     }
+    }
+     
+      
+  if (puzzle_state == 3)
+    {
+      if (check_laser_rx(code[3]))
+      {
+        
       puzzle_state = 4;
       set_door_lights(255);
       set_exit_door(false);
       r2_door = true;
       
-      delay(500);
+      delay(5000);
+      }
+     if ((check_laser_rx(code[0]) || check_laser_rx(code[2]) || check_laser_rx(code[1])) && (puzzle_state == 3))
+     {
+          puzzle_state = 0;
+          set_door_lights(0);
+     }
     }
-  /*else
-    {
-    puzzle_state = 0;
-    set_door_lights(0);
-    }*/
-
 
 
   return puzzle_state;
