@@ -181,32 +181,34 @@ int check_laser_puzzle()
 
   if (puzzle_state == 1)
     {
+      
+     if (check_laser_rx(code[0]) || check_laser_rx(code[2]) || check_laser_rx(code[3]))  
+     {
+          puzzle_state = 0;
+          set_door_lights(0);
+     }
       if (check_laser_rx(code[1]))
       {
         puzzle_state = 2;
         set_door_lights(126);
         delay(5000);
       }
-     if (check_laser_rx(code[0]) || check_laser_rx(code[2]) || check_laser_rx(code[3]))
-     {
-          puzzle_state = 0;
-          set_door_lights(0);
-     }
     }
   
   if (puzzle_state == 2)
     {
+      if (check_laser_rx(code[0]) || check_laser_rx(code[1]) || check_laser_rx(code[3]))
+     {
+          puzzle_state = 0;
+          set_door_lights(0);
+     }
       if (check_laser_rx(code[2]))
       {
         puzzle_state = 3;
         set_door_lights(189);
         delay(5000);
       }
-     if (check_laser_rx(code[0]) || check_laser_rx(code[1]) || check_laser_rx(code[3]))
-     {
-          puzzle_state = 0;
-          set_door_lights(0);
-     }
+     
     }
      
       
