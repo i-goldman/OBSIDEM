@@ -166,19 +166,19 @@ pinMode(r2_laserrx4_pin,INPUT);
 
 int check_laser_puzzle()
 {
-  const int illum_delay = 500;
+  const int illum_delay = 750;
   
 
-  
+
   if ((puzzle_state == 0) && (check_laser_rx(code[0])))
     {
-      set_door_lights(0);
-      delay(illum_delay);
+      delay(illum_delay * 2);
       if (check_laser_rx(code[0]))
       {
         puzzle_state++;
         set_door_lights(63);
         delay(5000);
+        return (puzzle_state);
       }
       
     }
@@ -190,6 +190,7 @@ int check_laser_puzzle()
         puzzle_state++;
         set_door_lights(126);
         delay(5000);
+        return (puzzle_state);
       }
     }
   if ((puzzle_state == 2) && (check_laser_rx(code[2])))
@@ -200,6 +201,7 @@ int check_laser_puzzle()
         puzzle_state++;
         set_door_lights(189);
         delay(5000);
+        return (puzzle_state);
       }
     }
   if ((puzzle_state == 3) && (check_laser_rx(code[3])))
@@ -210,20 +212,26 @@ int check_laser_puzzle()
         puzzle_state++;
         set_door_lights(255);
         set_exit_door(false);
+        return (puzzle_state);
       }
     }
 
 //resetting code
+  if (puzzle_state == 0)
+      set_door_lights(0);
+
+  
   if (puzzle_state == 1)
   {
     if (check_laser_rx(code[0]) || check_laser_rx(code[2]) || check_laser_rx(code[3]))
     {
       delay(illum_delay);
-      if (check_laser_rx(code[0]) || check_laser_rx(code[2]) || check_laser_rx(code[3]))
+      while (check_laser_rx(code[0]) || check_laser_rx(code[2]) || check_laser_rx(code[3]))
         {
-          puzzle_state = 0;
           set_door_lights(0);
-          delay(3000); 
+          delay(3000);
+          puzzle_state = 0; 
+          return (puzzle_state);
         }
     }
   }
@@ -232,11 +240,12 @@ int check_laser_puzzle()
     if (check_laser_rx(code[0]) || check_laser_rx(code[1]) || check_laser_rx(code[3]))
       {
         delay(illum_delay);
-        if (check_laser_rx(code[0]) || check_laser_rx(code[1]) || check_laser_rx(code[3]))
+        while (check_laser_rx(code[0]) || check_laser_rx(code[1]) || check_laser_rx(code[3]))
           {
             puzzle_state = 0;
             set_door_lights(0);
             delay(3000);
+            return (puzzle_state);
           }
       }
   }
@@ -245,11 +254,12 @@ int check_laser_puzzle()
     if (check_laser_rx(code[0]) || check_laser_rx(code[1]) || check_laser_rx(code[2]))
       {
         delay(illum_delay);
-        if (check_laser_rx(code[0]) || check_laser_rx(code[1]) || check_laser_rx(code[2]))
+        while (check_laser_rx(code[0]) || check_laser_rx(code[1]) || check_laser_rx(code[2]))
           {
             puzzle_state = 0;
             set_door_lights(0);
             delay(3000);
+            return (puzzle_state);
           }
       } 
   }
@@ -470,13 +480,18 @@ void loop() {
       {
         room2.set_uv(true);
         if (!room2.r2_uv)
-            room2.r2_uv = true;
+        {
+          room2.puzzle_state = 0;
+          room2.r2_uv = true;
+        }
+            
        }
        
     else
     {
       room2.set_uv(false);
       room2.r2_uv = false;
+      room2.puzzle_state = 0;
     }
     
     room2.set_houselights(!room1.large_frame);
